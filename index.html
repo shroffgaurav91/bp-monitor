@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BP Tracker - Astha</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .bp-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .bp-input-wrapper {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .bp-input-wrapper label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        input[type="number"] {
+            padding: 14px;
+            font-size: 1.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        input[type="text"] {
+            padding: 12px;
+            font-size: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            width: 100%;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+            margin-top: 10px;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .readings-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .reading-item {
+            padding: 16px;
+            border-left: 4px solid #ddd;
+            margin-bottom: 12px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .reading-item:hover {
+            background: #f0f0f0;
+        }
+        
+        .reading-item.normal {
+            border-left-color: #4caf50;
+        }
+        
+        .reading-item.elevated {
+            border-left-color: #ff9800;
+        }
+        
+        .reading-item.high {
+            border-left-color: #f44336;
+        }
+        
+        .reading-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .bp-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .timestamp {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .notes {
+            font-size: 0.9rem;
+            color: #555;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-normal {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .status-elevated {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        
+        .status-high {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .chart-container {
+            margin-top: 20px;
+            position: relative;
+            height: 300px;
+        }
+        
+        .delete-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+        
+        .delete-btn:hover {
+            background: #d32f2f;
+        }
+        
+        @media (max-width: 600px) {
+            .bp-inputs {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💜 BP Tracker</h1>
+            <p>Tracking Astha's Blood Pressure</p>
+        </div>
+        
+        <div class="card">
+            <h2 style="margin-bottom: 20px; color: #333;">Add New Reading</h2>
+            <form id="bpForm">
+                <div class="bp-inputs">
+                    <div class="bp-input-wrapper">
+                        <label>Systolic (Upper)</label>
+                        <input type="number" id="systolic" placeholder="120" min="50" max="250" required>
+                    </div>
+                    <div class="bp-input-wrapper">
+                        <label>Diastolic (Lower)</label>
+                        <input type="number" id="diastolic" placeholder="80" min="30" max="150" required>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Notes (optional)</label>
+                    <input type="text" id="notes" placeholder="e.g., headache, after medication, morning reading">
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Save Reading</button>
+            </form>
+        </div>
+        
+        <div class="card">
+            <h2 style="margin-bottom: 20px; color: #333;">Reading History</h2>
+            <div id="readingsList" class="readings-list">
+                <div class="empty-state">
+                    <p>No readings yet. Add your first reading above!</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2 style="margin-bottom: 20px; color: #333;">Trend Chart</h2>
+            <div class="chart-container">
+                <canvas id="bpChart"></canvas>
+            </div>
+        </div>
+        
+        <button class="btn btn-secondary" onclick="exportData()">📤 Export Data</button>
+    </div>
+
+    <script>
+        let readings = JSON.parse(localStorage.getItem('bpReadings')) || [];
+        let chart = null;
+
+        function classifyBP(systolic, diastolic) {
+            if (systolic < 120 && diastolic < 80) return 'normal';
+            if (systolic < 130 && diastolic < 80) return 'elevated';
+            return 'high';
+        }
+
+        function getStatusText(classification) {
+            const statusMap = {
+                'normal': 'Normal',
+                'elevated': 'Elevated',
+                'high': 'High'
+            };
+            return statusMap[classification];
+        }
+
+        function formatDateTime(date) {
+            const options = { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric',
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+            };
+            return new Date(date).toLocaleString('en-IN', options);
+        }
+
+        function saveReadings() {
+            localStorage.setItem('bpReadings', JSON.stringify(readings));
+        }
+
+        function deleteReading(index) {
+            if (confirm('Delete this reading?')) {
+                readings.splice(index, 1);
+                saveReadings();
+                renderReadings();
+                updateChart();
+            }
+        }
+
+        function renderReadings() {
+            const listEl = document.getElementById('readingsList');
+            
+            if (readings.length === 0) {
+                listEl.innerHTML = '<div class="empty-state"><p>No readings yet. Add your first reading above!</p></div>';
+                return;
+            }
+
+            listEl.innerHTML = readings.map((reading, index) => {
+                const classification = classifyBP(reading.systolic, reading.diastolic);
+                return `
+                    <div class="reading-item ${classification}">
+                        <div class="reading-header">
+                            <div>
+                                <div class="bp-value">${reading.systolic}/${reading.diastolic} mmHg</div>
+                                <span class="status-badge status-${classification}">${getStatusText(classification)}</span>
+                            </div>
+                            <button class="delete-btn" onclick="deleteReading(${index})">Delete</button>
+                        </div>
+                        <div class="timestamp">📅 ${formatDateTime(reading.timestamp)}</div>
+                        ${reading.notes ? `<div class="notes">📝 ${reading.notes}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('bpChart').getContext('2d');
+            
+            if (chart) {
+                chart.destroy();
+            }
+
+            const last10 = readings.slice(-10).reverse();
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: last10.map(r => {
+                        const d = new Date(r.timestamp);
+                        return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+                    }),
+                    datasets: [
+                        {
+                            label: 'Systolic',
+                            data: last10.map(r => r.systolic),
+                            borderColor: '#f44336',
+                            backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Diastolic',
+                            data: last10.map(r => r.diastolic),
+                            borderColor: '#2196f3',
+                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            suggestedMin: 60,
+                            suggestedMax: 140
+                        }
+                    }
+                }
+            });
+        }
+
+        document.getElementById('bpForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const systolic = parseInt(document.getElementById('systolic').value);
+            const diastolic = parseInt(document.getElementById('diastolic').value);
+            const notes = document.getElementById('notes').value.trim();
+            
+            const reading = {
+                systolic,
+                diastolic,
+                notes,
+                timestamp: new Date().toISOString()
+            };
+            
+            readings.unshift(reading);
+            saveReadings();
+            renderReadings();
+            updateChart();
+            
+            // Clear form
+            document.getElementById('bpForm').reset();
+            document.getElementById('systolic').focus();
+        });
+
+        function exportData() {
+            const csv = [
+                ['Date', 'Time', 'Systolic', 'Diastolic', 'Status', 'Notes'],
+                ...readings.map(r => {
+                    const date = new Date(r.timestamp);
+                    return [
+                        date.toLocaleDateString('en-IN'),
+                        date.toLocaleTimeString('en-IN'),
+                        r.systolic,
+                        r.diastolic,
+                        getStatusText(classifyBP(r.systolic, r.diastolic)),
+                        r.notes
+                    ];
+                })
+            ].map(row => row.join(',')).join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `astha-bp-readings-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        // Initialize
+        renderReadings();
+        updateChart();
+        document.getElementById('systolic').focus();
+    </script>
+</body>
+</html>
